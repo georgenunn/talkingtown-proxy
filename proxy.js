@@ -25,8 +25,15 @@ app.get('/api/proxy', async (req, res) => {
       }
     });
 
-    const data = await response.json();
-    res.status(response.status).json(data);
+    const contentType = response.headers.get('content-type');
+    const raw = await response.text();
+
+    if (contentType && contentType.includes('application/json')) {
+      return res.status(response.status).json(JSON.parse(raw));
+    } else {
+      return res.status(response.status).send(raw);
+    }
+
   } catch (err) {
     res.status(500).json({ error: 'Proxy error', details: err.message });
   }
