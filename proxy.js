@@ -1,5 +1,6 @@
 const express = require('express');
 const fetch = require('node-fetch');
+const zlib = require('zlib');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -25,11 +26,20 @@ app.get('/api/proxy', async (req, res) => {
       }
     });
 
-    const contentType = response.headers.get('content-type');
-    const raw = await response.text();
+    const encoding = response.headers.get('content-encoding');
+    const buffer = await response.buffer();
 
-    res.setHeader('Content-Type', contentType || 'text/plain');
-    res.status(response.status).send(raw);
+    if (encoding === 'gzip') {
+      zlib.gunzip(buffer, (err, decoded) => {
+        if (err) {
+          res.status(500).send("Failed to decompress gzip response: " + err.message);
+        } else {
+          res.status(response.status).send(decoded.toString());
+        }
+      });
+    } else {
+      res.status(response.status).send(buffer.toString());
+    }
 
   } catch (err) {
     res.status(500).send('Proxy error: ' + err.message);
