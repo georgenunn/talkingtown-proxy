@@ -28,17 +28,14 @@ app.get('/api/proxy', async (req, res) => {
     const contentType = response.headers.get('content-type');
     const raw = await response.text();
 
-    if (contentType && contentType.includes('application/json')) {
-      return res.status(response.status).json(JSON.parse(raw));
-    } else {
-      return res.status(response.status).send(raw);
-    }
+    res.setHeader('Content-Type', contentType || 'text/plain');
+    res.status(response.status).send(raw);
 
   } catch (err) {
-    res.status(500).json({ error: 'Proxy error', details: err.message });
+    res.status(500).send('Proxy error: ' + err.message);
   }
 });
 
 app.listen(port, () => {
-  console.log(`Proxy listening on port ${port}`);
+  console.log(`Proxy running on port ${port}`);
 });
